@@ -1,0 +1,7 @@
+interface:
+  display_name: "Project Map"
+  short_description: "Keep a project's decisions, open tickets, and living docs current in a small local map"
+  default_prompt: "Use $project-map to check this project's map, list the frontier, and flag stale living docs."
+
+policy:
+  allow_implicit_invocation: true
