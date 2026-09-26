@@ -1,6 +1,6 @@
 # Project map formats
 
-Templates live in [../assets/templates/](../assets/templates/). `project_map.py init` copies `MAP.md`; copy `ticket.md` for each new ticket.
+Templates live in [../assets/templates/](../assets/templates/). `project_map.py init` copies `MAP.md`; copy `ticket.md` for a decision, research, or task ticket, `build-ticket.md` for a build ticket, and `spec.md` for a spec.
 
 ## MAP.md
 
@@ -41,6 +41,12 @@ File name: `tickets/<id>-<slug>.md`, where the file name starts with the ticket'
 | `claimed_by` | empty when unclaimed |
 | `supersedes` | id of the ticket this one replaces, or empty |
 
-Body sections: `## Question` and `## Resolution`. A closed ticket must have a non-empty `## Resolution`. Prototype and research outputs are linked from the resolution, not pasted.
+Body sections: `## Question` and `## Resolution` for decision, research, and task tickets; `## What to build`, `## Acceptance`, and `## Resolution` for build tickets. A closed ticket must have a non-empty `## Resolution`. Prototype and research outputs are linked from the resolution, not pasted.
+
+A build ticket needs at least one checkbox (`- [ ]`) under `## Acceptance`, and it can close only when every box is checked (`- [x]` or `- [X]`).
 
 The **frontier** is every open, unclaimed ticket whose blockers are all resolved.
+
+## Specs and the glossary
+
+A spec lives at `specs/<slug>.md`, is linked from *Destination*, and is a dated record. The glossary is `CONTEXT.md` at the repository root, registered in *Living docs* with the paths of the code that implements its concepts.

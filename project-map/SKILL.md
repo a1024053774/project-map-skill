@@ -1,6 +1,6 @@
 ---
 name: project-map
-description: Keep a long-running project's destination, decisions, open tickets, and key living docs in a small local-markdown map under `.project-map/`, and catch living docs that have gone stale against the code. Use when `.project-map/` exists or the user asks to start a project map; not for one-off tasks.
+description: Keep a long-running project's destination, decisions, open tickets, glossary, and key living docs in a small local-markdown map under `.project-map/`, carry the work from decisions to a spec, tracer-bullet build tickets, and one ticket per session, and catch living docs that have gone stale against the code. Use when `.project-map/` exists or the user asks to start a project map; not for one-off tasks.
 ---
 
 # Project map
@@ -20,7 +20,9 @@ A project map lets any session answer three questions cheaply: where the project
 .project-map/
   MAP.md                     # destination, decisions index, fog, out of scope, living docs
   tickets/T-001-<slug>.md    # one file per ticket; the ticket is the decision record
+  specs/<slug>.md            # a spec synthesized from closed decisions (a dated record)
   archive/                   # superseded or retired material, not read by default
+CONTEXT.md                   # the glossary, at the repository root, registered as a living doc
 ```
 
 Formats and templates: [references/formats.md](references/formats.md).
@@ -40,7 +42,7 @@ Each ticket is a question to decide or a piece of work to do. Ticket types:
 - `decide`, `compare`, `prototype`: resolved with the user. The agent proposes and the user decides; the agent never answers its own question or picks a prototype winner. Use the `grilling` Skill when the user invokes it.
 - `research`: a fact a decision waits on; the agent resolves it.
 - `task`: work that must happen before a decision can be made, such as provisioning access.
-- `build`: implementation work. It closes only with evidence: what was run, its result, and the commit.
+- `build`: implementation work, written as a vertical slice with acceptance checkboxes (see [Pipeline](#pipeline)). It closes only with every box checked and evidence: what was run, its result, and the commit.
 
 Work a ticket in this order:
 
@@ -52,6 +54,43 @@ Work a ticket in this order:
 **Fog or ticket?** Write a ticket when the question can be stated precisely now, even if it cannot be answered yet. Otherwise it stays as fog in *Not yet specified*. Do not pre-slice fog into ticket-sized pieces.
 
 When evidence shows a closed decision was wrong, do not design around it. Open a new ticket with `supersedes: <old id>`. When it closes, set the old ticket to `superseded` and repoint its *Decisions so far* line.
+
+## Pipeline
+
+A destination usually moves through four steps, each in its own session when the work is large. Small work that fits one session skips the spec and goes straight to one build ticket.
+
+### 1. Decide
+
+Settle the decision tickets with the user (the `grilling` Skill when invoked). Keep the domain language in `CONTEXT.md` at the repository root: when a term is settled, write it there right away; challenge a user's term that conflicts with the glossary, and check what the user says against the code. `CONTEXT.md` is a glossary only, with no implementation details. Create it with the first settled term and register it as a living doc that covers the code implementing those concepts.
+
+### 2. Spec
+
+When every decision ticket inside the destination is closed, synthesize a spec without asking new questions: copy `assets/templates/spec.md` to `specs/<slug>.md` and link it from *Destination*. It states the problem, the solution, the decisions (as links, never restated), the test seam, and what is out of scope. Pick the highest test seam, ideally one end-to-end entry point, and confirm it with the user. A spec is a dated record: later changes go through new tickets, not edits to the spec.
+
+### 3. Slice
+
+Break the spec into `build` tickets from `assets/templates/build-ticket.md`:
+
+- each ticket is a tracer-bullet slice: a narrow but complete path through every layer, verifiable on its own, small enough for one fresh session;
+- blocking edges go in `blocked_by`, and prefactoring that makes the change easy comes first;
+- a wide mechanical refactor that no single slice can land green is sequenced as expand, migrate in batches, contract;
+- the body states the behavior from the user's side and its acceptance checkboxes; leave out file paths and code snippets, which go stale, unless a prototype snippet encodes a decision better than prose.
+
+Show the breakdown (title, blocked by, what it delivers) and let the user adjust granularity and edges before writing the files.
+
+### 4. Work one build ticket
+
+One ticket per session, taken from the frontier:
+
+1. Claim it.
+2. Make the agreed end-to-end check fail for the missing behavior. If a part must be tested in isolation, list its failure modes first.
+3. Implement the slice.
+4. Run the check green and keep its artifact: the output plus the command that regenerates it.
+5. Check against the spec: what is missing or partial, what was built but not asked for, and what looks implemented but is wrong. Fix it or open tickets; check a box only with evidence.
+6. Run `design-integrity-review` when its trigger applies, and `status` for stale living docs.
+7. Close with the resolution (command, result, commit) and commit the work.
+
+The script rejects a `build` ticket without acceptance checkboxes and a closed one with unchecked boxes.
 
 ## Living docs
 

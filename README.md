@@ -9,6 +9,21 @@
 - **文件写当前状态，历史交给 git**：地图和活文档不追加变更记录；被取代的内容直接删除，或移入 `archive/` 并注明替代者。
 - **状态是数据**：票据的状态、阻塞和认领都写在 frontmatter 里，frontier 由脚本计算，不靠手工维护。
 
+## 流水线
+
+一个目的地通常分四步走，工作量大时每步单独开一个会话；一次会话做得完的小事，跳过设计文档，直接做一张 build 票。
+
+| 步骤 | 做什么 | 产物 |
+| --- | --- | --- |
+| 1. 决定 | 和用户一起关闭决定票（可用 grilling）；定下的术语当场写进术语表 `CONTEXT.md` | 已关闭的决定票、术语表 |
+| 2. 设计文档 | 决定票全部关闭后，不再提问，直接汇总；测试接缝选最高处，最好只有一个端到端入口 | `specs/<slug>.md`（带日期的记录） |
+| 3. 切票 | 切成纵向的 tracer-bullet 切片，每张在一个新会话里做得完，写明阻塞关系；大范围机械改动走"扩展、分批迁移、收缩"；切完让用户确认粒度 | 带验收条件的 build 票 |
+| 4. 做一张票 | 一个会话只做一张：先让端到端检查失败，再实现，再通过并留下可复现工件；对照设计文档检查漏做、多做、做错；附证据关票并提交 | 关闭的 build 票和提交 |
+
+`status` 会拒绝没有验收条件的 build 票，也会拒绝还有未勾选项就关闭的 build 票。票据里不写文件路径和代码片段，因为它们很快会过时。
+
+这套流程参考了 Matt Pocock 的 [to-spec](https://github.com/mattpocock/skills/blob/main/skills/engineering/to-spec/SKILL.md)、[to-tickets](https://github.com/mattpocock/skills/blob/main/skills/engineering/to-tickets/SKILL.md) 和 [domain-modeling](https://github.com/mattpocock/skills/blob/main/skills/engineering/domain-modeling/SKILL.md)，但不采用他的 TDD 循环，默认用端到端检查。
+
 ## 文档过时怎么防
 
 文档分两类：
@@ -49,6 +64,17 @@ python3 project-map/scripts/project_map.py status --root <项目根>
 ```
 
 `status` 在有结构问题或过时活文档时返回非零，可以接进 hook 或 CI。
+
+## 验证
+
+两个端到端脚本都在临时 git 仓库里运行，不碰当前项目：
+
+```bash
+bash tests/pipeline_e2e.sh <输出目录>
+bash tests/stale_check_e2e.sh
+```
+
+`pipeline_e2e.sh` 用一个小型笔记 CLI 走完整条流水线（决定、设计文档、切票、先红后绿做完一张 build 票），在输出目录留下运行日志、端到端输出和最终的地图；`stale_check_e2e.sh` 覆盖活文档过时检查的各种情况。两者都包含应当被拒绝的错误情况。
 
 ## 设计依据
 

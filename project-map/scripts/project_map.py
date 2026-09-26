@@ -18,6 +18,7 @@ STATUSES = {"open", "closed", "superseded", "out-of-scope"}
 RESOLVED = {"closed", "superseded"}
 FIELDS = ("id", "title", "type", "status", "blocked_by", "claimed_by", "supersedes")
 LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
+CHECKBOX = re.compile(r"^\s*[-*] \[([ xX])\]", re.M)
 TEMPLATES = Path(__file__).resolve().parent.parent / "assets" / "templates"
 OTHER_LEDGERS = (".project-to-act", "PROJECT_LEDGER.md")
 
@@ -118,6 +119,12 @@ def check_map(root: Path) -> tuple[list[str], str, dict[str, dict]]:
         resolution = t["_body"].get("Resolution", "").strip()
         if t["status"] == "closed" and (not resolution or re.fullmatch(r"<[^\n]*>", resolution)):
             problems.append(f"{name}: closed without a Resolution")
+        if t["type"] == "build" and t["status"] in ("open", "closed"):
+            boxes = CHECKBOX.findall(t["_body"].get("Acceptance", ""))
+            if not boxes:
+                problems.append(f"{name}: build ticket without acceptance criteria (checkboxes under '## Acceptance')")
+            elif t["status"] == "closed" and " " in boxes:
+                problems.append(f"{name}: closed with {boxes.count(' ')} unchecked acceptance criteria")
         if t["status"] == "closed" and t["type"] != "build" and not listed:
             problems.append(f"{name}: closed decision missing from 'Decisions so far'")
         if t["status"] == "open" and listed:
@@ -138,7 +145,8 @@ def living_docs(text: str) -> list[tuple[str, list[str], str]]:
 
 def git(root: Path, *args: str) -> str | None:
     result = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True)
-    return result.stdout.strip() if result.returncode == 0 else None
+    # rstrip only: porcelain status lines start with a meaningful space.
+    return result.stdout.rstrip() if result.returncode == 0 else None
 
 
 def stale_git(root: Path, doc: str, covers: list[str], verified: str) -> tuple[str | None, str | None]:
