@@ -27,6 +27,8 @@ Open tickets are not listed in the map; the script computes them. A ticket appea
 - **Covers**: backtick-quoted paths or globs relative to the project root. `**` matches any depth. Pick the paths whose change could make the doc wrong, not the whole repository.
 - **Verified**: empty, or a commit id recorded when a flagged change was reviewed and did not affect the doc. Editing the doc itself also counts as a review, so the cell is only needed for "reviewed, no change needed".
 
+The script flags a living doc as stale when commits after its last reviewed commit changed its `covers` paths, or when the working tree changes covered paths without touching the doc. The last reviewed commit is the later of the doc's own last commit and its *Verified* commit. Without git, it compares modification times.
+
 ## Tickets
 
 File name: `tickets/<id>-<slug>.md`, where the file name starts with the ticket's `id`. Frontmatter uses simple `key: value` lines; lists use `[A, B]`.
