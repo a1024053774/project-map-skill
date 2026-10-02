@@ -175,7 +175,10 @@ def stale_git(root: Path, doc: str, covers: list[str], verified: str) -> tuple[s
 
 
 def stale_mtime(root: Path, doc: str, covers: list[str], verified: str) -> tuple[str | None, str | None]:
-    files = [p for c in covers for p in root.glob(c) if p.is_file() and p != root / doc]
+    # A matched directory stands for every file under it, as in git pathspecs; Path.glob before
+    # Python 3.13 returns only directories for a trailing `**`, so `src/**` would match no files.
+    matched = (p for c in covers for p in root.glob(c))
+    files = [f for p in matched for f in ([p] if p.is_file() else p.rglob("*")) if f.is_file() and f != root / doc]
     if not files:
         return f"living doc {doc}: covers {', '.join(covers)} match no files", None
     reviewed = (root / doc).stat().st_mtime
